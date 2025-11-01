@@ -5,30 +5,31 @@ import (
 	"log"
 	"time"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/spf13/viper"
 	// "github.com/ilyakaznacheev/cleanenv"
 )
 
 type Config struct {
-	Env         string     `yaml:"env"`
-	StoragePath string     `yaml:"storage_path"`
-	HTTPServer  HTTPServer `yaml:"http_server"`
-	Database    Database   `yaml:"database"`
+	Env         string     `mapstructure:"env"`
+	StoragePath string     `mapstructure:"storage_path"`
+	HTTPServer  HTTPServer `mapstructure:"http_server"`
+	Database    Database   `mapstructure:"database"`
 }
 
 type HTTPServer struct {
-	Address     string        `yaml:"address"`
-	Timeout     time.Duration `yaml:"timeout"`
-	IdleTimeout time.Duration `yaml:"idle_timeout"`
+	Address     string        `mapstructure:"address"`
+	Timeout     time.Duration `mapstructure:"timeout"`
+	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
 }
 
 type Database struct {
-	Port       int    `yaml:"port"`
-	Host       string `yaml:"host"`
-	Name       string `yaml:"name"`
-	User       string `yaml:"postgres"`
-	Password   string `yaml:"password"`
-	ConnString string `yaml:"conn_string"`
+	Port       int    `mapstructure:"port"`
+	Host       string `mapstructure:"host"`
+	Name       string `mapstructure:"name"`
+	User       string `mapstructure:"postgres"`
+	Password   string `mapstructure:"password"`
+	ConnString string `mapstructure:"conn_string"`
 }
 
 func Load() (*Config, error) {
@@ -44,7 +45,9 @@ func LoadFrom(path string) (*Config, error) {
 	}
 
 	var c Config
-	if err := v.Unmarshal(&c); err != nil {
+	if err := v.Unmarshal(&c, func(dc *mapstructure.DecoderConfig) {
+		dc.DecodeHook = mapstructure.StringToTimeDurationHookFunc()
+	}); err != nil {
 		return nil, fmt.Errorf("unmarshal: %w", err)
 	}
 
