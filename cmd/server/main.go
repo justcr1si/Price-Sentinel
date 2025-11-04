@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"price_sentinel/config"
-	"price_sentinel/internal/handler"
+	"price_sentinel/internal/api/auth"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -32,16 +32,14 @@ func main() {
 	logger := setupLogger(cfg.Env)
 	log.Logger = *logger
 
+	authRouter := chi.NewRouter().
+		Route("/auth", func(r chi.Router) {
+			r.Post("/signup", auth.SignUp)
+			r.Post("/login", auth.Login)
+			r.Post("/refresh", auth.Refresh)
+		})
+
 	log.Info().Str("env", cfg.Env).Msg("app starting")
-
-	authRouter := chi.NewRouter()
-	authRouter.Route("/auth", func(r chi.Router) {
-		r.Post("/signup", handler.SignUp)
-		r.Post("/login", handler.Login)
-		r.Post("/refresh", handler.Refresh)
-	})
-
-	fmt.Println(authRouter)
 
 	fmt.Println(cfg.HTTPServer.Address)
 	fmt.Println(cfg.HTTPServer.Address[len(cfg.HTTPServer.Address)-5:])

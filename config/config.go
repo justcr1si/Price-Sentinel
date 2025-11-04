@@ -18,6 +18,9 @@ type Config struct {
 }
 
 type HTTPServer struct {
+	// Router      *chi.Mux
+	// DB          *sql.DB
+	// AuthToken   *jwtauth.JWTAuth
 	Address     string        `mapstructure:"address"`
 	Timeout     time.Duration `mapstructure:"timeout"`
 	IdleTimeout time.Duration `mapstructure:"idle_timeout"`
