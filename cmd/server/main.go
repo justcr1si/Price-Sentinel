@@ -6,10 +6,9 @@ import (
 	"net/http"
 	"os"
 	"price_sentinel/config"
-	"price_sentinel/internal/api/auth"
+	"price_sentinel/internal/db"
 	"time"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -25,25 +24,32 @@ func main() {
 	if err != nil {
 		log.Printf("Config wasn't loaded: %v", err)
 	}
-	fmt.Println(cfg)
-	fmt.Println(cfg.HTTPServer)
-	fmt.Println(cfg.Database)
 
 	logger := setupLogger(cfg.Env)
 	log.Logger = *logger
 
-	authRouter := chi.NewRouter().
-		Route("/auth", func(r chi.Router) {
-			r.Post("/signup", auth.SignUp)
-			r.Post("/login", auth.Login)
-			r.Post("/refresh", auth.Refresh)
-		})
+	// authRouter := chi.NewRouter().
+	// 	Route("/auth", func(r chi.Router) {
+	// 		r.Post("/signup", auth.SignUp)
+	// 		r.Post("/login", auth.Login)
+	// 		r.Post("/refresh", auth.Refresh)
+	// 	})
+	db, err := db.DBClient(cfg.Database.ConnString)
 
-	log.Info().Str("env", cfg.Env).Msg("app starting")
+	if err != nil {
+		log.Err(err)
+	}
 
-	fmt.Println(cfg.HTTPServer.Address)
-	fmt.Println(cfg.HTTPServer.Address[len(cfg.HTTPServer.Address)-5:])
-	http.ListenAndServe(cfg.HTTPServer.Address[len(cfg.HTTPServer.Address)-5:], authRouter)
+	server := config.CreateServer(db)
+	server.MountMiddleware()
+	server.MountAuthHandlers()
+
+	fmt.Println(server)
+
+	addr := cfg.Server.Address[len(cfg.Server.Address)-5:]
+
+	log.Info().Str("env", cfg.Env).Str("addr", addr).Msg("app starting")
+	http.ListenAndServe(addr, server.Router)
 }
 
 func setupLogger(env string) *zerolog.Logger {
